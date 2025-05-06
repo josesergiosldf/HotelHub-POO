@@ -4,6 +4,7 @@ import Repository.*;
 import Users.Admin;
 import Hotel.Reserva;
 import Hotel.Quarto;
+import Users.Cliente;
 import Users.Usuario;
 import javax.swing.*;
 import java.awt.*;
@@ -90,7 +91,39 @@ public class TelaAdmin extends JFrame {
         });
 
         btnCriarReserva.addActionListener((ActionEvent e) -> {
-            new TelaCriarReserva(admin, repoUsuario, repoReserva, repoQuarto).setVisible(true);
+            List<Usuario> clientesDisponiveis = repoUsuario.listarUsuarios().stream()
+                    .filter(u -> u instanceof Cliente)
+                    .filter(u -> !repoReserva.clienteTemReservaAtiva(((Cliente) u).getCpf()))
+                    .toList();
+
+            if (clientesDisponiveis.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Todos os clientes já possuem reservas ativas.\n" +
+                                "Um cliente só pode ter uma reserva ativa por vez.",
+                        "Aviso",
+                        JOptionPane.WARNING_MESSAGE
+                );
+            }
+            else {
+                String[] opcoes = {"Reserva Normal", "Reserva Promocional"};
+                int escolha = JOptionPane.showOptionDialog(
+                        this,
+                        "Selecione o tipo de reserva:",
+                        "Tipo de Reserva",
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        opcoes,
+                        opcoes[0]);
+
+                if (escolha == 0) {
+                    new TelaCriarReserva(admin, repoUsuario, repoReserva, repoQuarto).setVisible(true);
+                }
+                else if (escolha == 1) {
+                    new TelaCriarReservaPromocional(admin, repoUsuario, repoReserva, repoQuarto).setVisible(true);
+                }
+            }
         });
 
         btnLucro.addActionListener((ActionEvent e) -> {

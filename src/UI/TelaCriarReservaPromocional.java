@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 
-public class TelaCriarReserva extends JFrame {
+public class TelaCriarReservaPromocional extends JFrame {
     private final RepositoryUsuario repoUsuario;
     private final RepositoryReserva repoReserva;
     private final RepositoryQuarto repoQuarto;
@@ -21,20 +21,22 @@ public class TelaCriarReserva extends JFrame {
     private HotelEnums.TipoTour tourSelecionado;
     private LocalDate dataCheckIn;
     private LocalDate dataCheckOut;
+    private double percentualDesconto;
 
-    private final Color COR_PRIMARIA = new Color(100, 149, 237);
+    private final Color COR_PRIMARIA = new Color(255, 165, 0); // Laranja para diferenciar
     private final Color COR_SECUNDARIA = new Color(255, 255, 255);
     private final Font FONTE_TITULO = new Font("Arial", Font.BOLD, 24);
     private final Font FONTE_SUBTITULO = new Font("Arial", Font.PLAIN, 16);
     private final Font FONTE_TEXTO = new Font("Arial", Font.PLAIN, 14);
 
-    public TelaCriarReserva(Admin admin, RepositoryUsuario repoUsuario, RepositoryReserva repoReserva, RepositoryQuarto repoQuarto) {
+    public TelaCriarReservaPromocional(Admin admin, RepositoryUsuario repoUsuario,
+                                       RepositoryReserva repoReserva, RepositoryQuarto repoQuarto) {
         this.admin = admin;
         this.repoUsuario = repoUsuario;
         this.repoReserva = repoReserva;
         this.repoQuarto = repoQuarto;
 
-        setTitle("Criar Nova Reserva");
+        setTitle("Criar Reserva Promocional");
         setSize(900, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -325,6 +327,61 @@ public class TelaCriarReserva extends JFrame {
             tourSelecionado = (HotelEnums.TipoTour) cbTour.getSelectedItem();
 
             getContentPane().removeAll();
+            selecionarDesconto();
+        });
+
+        rodapePanel.add(btnCancelar);
+        rodapePanel.add(btnAnterior);
+        rodapePanel.add(btnProximo);
+
+        panel.add(corpoPanel, BorderLayout.CENTER);
+        panel.add(rodapePanel, BorderLayout.SOUTH);
+
+        atualizarTela(panel);
+    }
+
+    private void selecionarDesconto() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(COR_SECUNDARIA);
+
+        panel.add(criarPainelCabecalho("Aplicar Desconto Promocional"), BorderLayout.NORTH);
+
+        JPanel corpoPanel = new JPanel(new GridBagLayout());
+        corpoPanel.setBorder(BorderFactory.createEmptyBorder(30, 100, 30, 100));
+        corpoPanel.setBackground(COR_SECUNDARIA);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(15, 15, 15, 15);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        JLabel lblDesconto = new JLabel("Percentual de Desconto (%):");
+        lblDesconto.setFont(FONTE_SUBTITULO);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        corpoPanel.add(lblDesconto, gbc);
+
+        JSpinner spinnerDesconto = new JSpinner(new SpinnerNumberModel(10, 0, 100, 5));
+        spinnerDesconto.setFont(FONTE_TEXTO);
+        gbc.gridx = 1;
+        corpoPanel.add(spinnerDesconto, gbc);
+
+        JPanel rodapePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        rodapePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        rodapePanel.setBackground(COR_SECUNDARIA);
+
+        JButton btnCancelar = criarBotao("Cancelar", new Color(204, 0, 0));
+        btnCancelar.addActionListener(e -> dispose());
+
+        JButton btnAnterior = criarBotao("Anterior", new Color(153, 153, 153));
+        btnAnterior.addActionListener(e -> {
+            getContentPane().removeAll();
+            selecionarServicos();
+        });
+
+        JButton btnProximo = criarBotao("Próximo", COR_PRIMARIA);
+        btnProximo.addActionListener(e -> {
+            percentualDesconto = (Integer) spinnerDesconto.getValue() / 100.0;
+            getContentPane().removeAll();
             confirmarReserva();
         });
 
@@ -386,8 +443,11 @@ public class TelaCriarReserva extends JFrame {
                         "Dias: " + dataCheckIn.until(dataCheckOut).getDays() + "\n" +
                         "Serviço de Quarto: " + (servicoSelecionado != null ? servicoSelecionado : "Nenhum") + "\n" +
                         "Tour: " + (tourSelecionado != null ? tourSelecionado : "Nenhum") + "\n" +
-                        "Valor Total: R$ " + String.format("%.2f", reservaTemp.getValorTotal()) + "\n\n" +
-                        "Pontos disponíveis: " + clienteSelecionado.getPontos()
+                        "Valor Original: R$ " + String.format("%.2f", reservaTemp.getValorTotal() / (1 - percentualDesconto)) + "\n" +
+                        "Desconto Promocional: " + (percentualDesconto * 100) + "%\n" +
+                        "Valor com Desconto: R$ " + String.format("%.2f", reservaTemp.getValorTotal()) + "\n" +
+                        "Pontos disponíveis: " + clienteSelecionado.getPontos() + "\n" +
+                        "⚠️ Reserva promocional não acumula pontos ⚠️"
         );
 
         JScrollPane scrollPane = new JScrollPane(detalhesReserva);
@@ -494,6 +554,7 @@ public class TelaCriarReserva extends JFrame {
         btnFinalizar.addActionListener(e -> {
             try {
                 HotelEnums.MetodoPagamento metodo = (HotelEnums.MetodoPagamento) cbMetodo.getSelectedItem();
+                reservaTemp.aplicarDesconto(percentualDesconto);
                 int parcelas = (int) spinnerParcelas.getValue();
                 boolean usarPontos = checkUsarPontos.isSelected();
 
@@ -520,18 +581,16 @@ public class TelaCriarReserva extends JFrame {
                 if (servicoSelecionado != null) {
                     reservaFinal.adicionarServicoQuarto(servicoSelecionado);
                 }
-
                 if (tourSelecionado != null) {
                     reservaFinal.adicionarTour(tourSelecionado);
                 }
+
+                reservaFinal.aplicarDesconto(percentualDesconto);
 
                 repoQuarto.alterarDisponibilidade(quartoSelecionado.getNumero(), false);
 
                 repoReserva.adicionarReserva(reservaFinal);
                 clienteSelecionado.adicionarReserva(reservaFinal);
-
-                int pontosGanhos = (int) (valorFinal / 10);
-                clienteSelecionado.adicionarPontos(pontosGanhos - pontosUsados);
 
                 gerarRecibo(reservaFinal, metodo, parcelas, valorFinal, pontosUsados);
 
@@ -561,30 +620,32 @@ public class TelaCriarReserva extends JFrame {
         JTextArea recibo = new JTextArea();
         recibo.setEditable(false);
         recibo.setFont(new Font("Consolas", Font.PLAIN, 14));
+        double valorOriginal = reserva.getValorTotal() / (1 - percentualDesconto);
         recibo.setText(
                 "=== Hotel Vieira Norte ===\n" +
-                        "=== Recibo de Reserva ===\n\n" +
-                        "ID da Reserva: " + reserva.getId() + "\n" +
+                        "=== Recibo de Reserva Promocional ===\n\n" +
+                        "ID: " + reserva.getId() + "\n" +
                         "Cliente: " + reserva.getCliente().getNome() + "\n" +
-                        "CPF: " + reserva.getCliente().getCpf() + "\n" +
-                        "Quarto: " + reserva.getQuarto().getNumero() + "\n" +
-                        "Tipo: " + reserva.getQuarto().getTipo() + "\n" +
-                        "Check-In: " + reserva.getDataCheckIn() + "\n" +
-                        "Check-Out: " + reserva.getDataCheckOut() + "\n" +
+                        "Quarto: " + reserva.getQuarto().getNumero() + " (" + reserva.getQuarto().getTipo() + ")\n" +
+                        "Período: " + reserva.getDataCheckIn() + " a " + reserva.getDataCheckOut() + "\n" +
                         "Dias: " + reserva.getDataCheckIn().until(reserva.getDataCheckOut()).getDays() + "\n\n" +
-                        "Serviço de Quarto: " + (reserva.getServicoQuarto() != null ? reserva.getServicoQuarto() : "Nenhum") + "\n" +
-                        "Tour: " + (reserva.getTour() != null ? reserva.getTour() : "Nenhum") + "\n\n" +
+                        "Serviços:\n" +
+                        "• Quarto: " + (reserva.getServicoQuarto() != null ? reserva.getServicoQuarto() : "Nenhum") + "\n" +
+                        "• Tour: " + (reserva.getTour() != null ? reserva.getTour() : "Nenhum") + "\n\n" +
+                        "Valor Original: R$ " + String.format("%.2f", valorOriginal) + "\n" +
+                        "Desconto: " + (percentualDesconto * 100) + "%\n" +
                         "Subtotal: R$ " + String.format("%.2f", reserva.getValorTotal()) + "\n" +
-                        (pontosUsados > 0 ? "Desconto por pontos: -R$ " + pontosUsados + "\n" : "") +
-                        (metodo == HotelEnums.MetodoPagamento.CREDITO ? "Juros (" + (metodo.getJuros() * 100) + "%): R$ " +
-                                String.format("%.2f", reserva.getValorTotal() * metodo.getJuros()) + "\n" : "") +
-                        "Valor Final: R$ " + String.format("%.2f", valorFinal) + "\n\n" +
-                        "Método de Pagamento: " + metodo.getDescricao() +
+                        (pontosUsados > 0 ? "Pontos Utilizados: -R$ " + pontosUsados + "\n" : "") +
+                        (metodo == HotelEnums.MetodoPagamento.CREDITO ?
+                                "Juros (" + (metodo.getJuros() * 100) + "%): R$ " +
+                                        String.format("%.2f", reserva.getValorTotal() * metodo.getJuros()) + "\n" : "") +
+
+                        "Total Final: R$ " + String.format("%.2f", valorFinal) + "\n\n" +
+                        "Pagamento: " + metodo.getDescricao() +
                         (metodo == HotelEnums.MetodoPagamento.CREDITO ? " (" + parcelas + "x)" : "") + "\n" +
                         "Status: " + reserva.getStatus() + "\n\n" +
-                        "Pontos ganhos: " + (int) (valorFinal / 10) + "\n" +
-                        "Pontos totais: " + reserva.getCliente().getPontos() + "\n\n" +
-                        "Obrigado pela sua reserva!"
+                        "⚠️ Reserva promocional não acumula pontos ⚠️\n" +
+                        "Obrigado pela preferência!"
         );
 
         JOptionPane.showMessageDialog(this, new JScrollPane(recibo), "Recibo da Reserva", JOptionPane.INFORMATION_MESSAGE);

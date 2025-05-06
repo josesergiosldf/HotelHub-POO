@@ -16,14 +16,30 @@ public class RepositoryReserva implements GerenciadorReserva {
         if (verificaConflitoReserva(novaReserva)) {
             throw new IllegalStateException("Já existe uma reserva ativa para esse quarto no período informado.");
         }
+
+        if (clienteTemReservaAtiva(novaReserva.getCliente().getCpf())) {
+            throw new IllegalStateException("Este cliente já possui uma reserva ativa. Não é permitido ter mais de uma reserva ativa simultaneamente.");
+        }
+
         reservas.put(novaReserva.getId(), novaReserva);
+    }
+
+    public boolean clienteTemReservaAtiva(String cpf) {
+        for (Reserva r : reservas.values()) {
+            if (r.getCliente().getCpf().equals(cpf) &&
+                    r.getStatus() == Reserva.Status.ATIVA) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean verificaConflitoReserva(Reserva novaReserva) {
         for (Reserva r : reservas.values()) {
             if (r.getQuarto().getNumero() == novaReserva.getQuarto().getNumero()
                     && r.getStatus() == Reserva.Status.ATIVA
-                    && datasConflitam(r.getDataCheckIn(), r.getDataCheckOut(), novaReserva.getDataCheckIn(), novaReserva.getDataCheckOut())) {
+                    && datasConflitam(r.getDataCheckIn(), r.getDataCheckOut(),
+                    novaReserva.getDataCheckIn(), novaReserva.getDataCheckOut())) {
                 return true;
             }
         }
@@ -102,22 +118,26 @@ public class RepositoryReserva implements GerenciadorReserva {
     }
 
     @Override
-    public boolean atualizarReserva(Reserva reservaAtualizada) {
+    public void atualizarReserva(Reserva reservaAtualizada) {
         if (reservaAtualizada == null) {
-            return false;
+            return;
         }
 
         Reserva reservaExistente = reservas.get(reservaAtualizada.getId());
         if (reservaExistente == null) {
-            return false;
+            return;
+        }
+
+        if (!reservaExistente.getCliente().getCpf().equals(reservaAtualizada.getCliente().getCpf()) &&
+                clienteTemReservaAtiva(reservaAtualizada.getCliente().getCpf())) {
+            return;
         }
 
         if (verificaConflitoAtualizacao(reservaExistente, reservaAtualizada)) {
-            return false;
+            return;
         }
 
         reservas.put(reservaAtualizada.getId(), reservaAtualizada);
-        return true;
     }
 
     private boolean verificaConflitoAtualizacao(Reserva reservaOriginal, Reserva reservaAtualizada) {

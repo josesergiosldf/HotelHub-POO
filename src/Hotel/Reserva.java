@@ -77,6 +77,13 @@ public class Reserva {
         this.valorTotal = calcularValorTotal();
     }
 
+    public void aplicarDesconto(double percentual) {
+        if (percentual < 0 || percentual > 1) {
+            throw new IllegalArgumentException("Percentual deve ser entre 0 e 1");
+        }
+        this.valorTotal *= (1 - percentual);
+    }
+
     public int getId() {
         return id;
     }

@@ -12,5 +12,5 @@ public interface GerenciadorReserva {
     List<Reserva> listarReservas();
     List<Reserva> listarReservasPorCliente(String cpf);
     List<Reserva> listarReservasPorStatus(Reserva.Status status);
-    boolean atualizarReserva(Reserva reservaAtualizada);
+    void atualizarReserva(Reserva reservaAtualizada);
 }
