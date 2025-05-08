@@ -60,12 +60,29 @@ public class TelaRegistro extends JFrame {
 
         btnRegistrar.addActionListener((ActionEvent e) -> {
             String nome = campoNome.getText().trim();
-            String cpf = campoCpf.getText().trim();
+            String cpfRaw = campoCpf.getText().trim();
             String senha = new String(campoSenha.getPassword()).trim();
             String email = campoEmail.getText().trim();
 
-            if (nome.isEmpty() || cpf.isEmpty() || senha.isEmpty() || email.isEmpty()) {
+            if (nome.isEmpty() || cpfRaw.isEmpty() || senha.isEmpty() || email.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Preencha todos os campos!", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String cpf = cpfRaw.replaceAll("[^0-9]", "");
+
+            if (cpf.length() != 11) {
+                JOptionPane.showMessageDialog(this, "CPF deve conter 11 dígitos.", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                JOptionPane.showMessageDialog(this, "Formato de email inválido.", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!senha.matches("^(?=.*[A-Za-z])(?=.*\\d).{4,}$")) {
+                JOptionPane.showMessageDialog(this, "Senha deve ter:\n- Mínimo 4 caracteres\n- Letras e números", "Erro", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 

@@ -59,27 +59,65 @@ public class TelaLogin extends JFrame {
         add(botoesPanel, BorderLayout.SOUTH);
 
         btnLogin.addActionListener((ActionEvent e) -> {
-            String cpf = campoCpf.getText().trim();
+
+            String cpfRaw = campoCpf.getText().trim();
             String senha = new String(campoSenha.getPassword()).trim();
 
-            Usuario usuario = repoUsuario.buscarUsuarioPorCpf(cpf);
-
-            if (cpf.isEmpty() || senha.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Preencha todos os campos!", "Erro", JOptionPane.ERROR_MESSAGE);
+            if (cpfRaw.isEmpty() || senha.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Preencha todos os campos!",
+                        "Erro",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            if (usuario != null && usuario.getSenha().equals(senha)) {
+            String cpf = cpfRaw.replaceAll("[^0-9]", "");
+            if (cpf.length() != 11) {
+                JOptionPane.showMessageDialog(this,
+                        "CPF inválido! Deve conter 11 dígitos numéricos.",
+                        "Erro",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!senha.matches("^(?=.*[A-Za-z])(?=.*\\d).{4,}$")) {
+                JOptionPane.showMessageDialog(this,
+                        "Senha inválida! Requisitos:\n"
+                                + "- Mínimo 4 caracteres\n"
+                                + "- Pelo menos 1 letra e 1 número",
+                        "Erro de Validação",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                Usuario usuario = repoUsuario.buscarUsuarioPorCpf(cpf);
+
+                if (usuario == null || !usuario.getSenha().equals(senha)) {
+                    throw new SecurityException("Credenciais inválidas");
+                }
+
                 if (usuario instanceof Cliente) {
                     new TelaCliente((Cliente) usuario, repoReserva, repoUsuario, repoQuarto).setVisible(true);
                 }
                 else if (usuario instanceof Admin) {
                     new TelaAdmin((Admin) usuario, repoReserva, repoQuarto, repoUsuario).setVisible(true);
                 }
+
                 dispose();
+
             }
-            else {
-                JOptionPane.showMessageDialog(this, "Usuário ou senha incorretos.", "Erro de Login", JOptionPane.ERROR_MESSAGE);
+            catch (SecurityException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Usuário ou senha incorretos.\nVerifique suas credenciais.",
+                        "Falha na Autenticação",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+            catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Erro inesperado durante o login:\n" + ex.getMessage(),
+                        "Erro do Sistema",
+                        JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -96,27 +134,57 @@ public class TelaLogin extends JFrame {
 
         btnEsqueceuSenha.addActionListener((ActionEvent e) -> {
             String cpf = JOptionPane.showInputDialog(this, "Digite seu CPF cadastrado:");
-            if (cpf == null || cpf.trim().isEmpty()) return;
+            if (cpf == null || cpf.trim().isEmpty()) {
+                return;
+            }
 
-            String email = JOptionPane.showInputDialog(this, "Digite o e-mail cadastrado:");
-            if (email == null || email.trim().isEmpty()) return;
+            cpf = cpf.trim();
 
             Usuario usuario = repoUsuario.buscarUsuarioPorCpf(cpf);
+            if (usuario == null) {
+                JOptionPane.showMessageDialog(this, "CPF não encontrado!", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-            if (usuario != null && usuario.getEmail().equalsIgnoreCase(email.trim())) {
-                String novaSenha = JOptionPane.showInputDialog(this, "Digite a nova senha:");
-                if (novaSenha != null && !novaSenha.trim().isEmpty()) {
-                    repoUsuario.atualizarUsuario(cpf, novaSenha.trim());
-                    JOptionPane.showMessageDialog(this, "Senha redefinida com sucesso!");
+            String email = JOptionPane.showInputDialog(this, "Digite o e-mail cadastrado:");
+            if (email == null || email.trim().isEmpty()) {
+                return;
+            }
+
+            email = email.trim();
+
+            if (!usuario.getEmail().equalsIgnoreCase(email)) {
+                JOptionPane.showMessageDialog(this, "E-mail não corresponde ao CPF informado!", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String novaSenha;
+            do {
+                novaSenha = JOptionPane.showInputDialog(this, "Digite a nova senha (mínimo 4 caracteres com letras e números):");
+                if (novaSenha == null) return;
+
+                novaSenha = novaSenha.trim();
+                if (novaSenha.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Senha não pode ser vazia!", "Erro", JOptionPane.ERROR_MESSAGE);
+                }
+                else if (!novaSenha.matches("^(?=.*[A-Za-z])(?=.*\\d).{4,}$")) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Senha inválida.\nRequisitos:\n- Mínimo 4 caracteres\n- Deve conter letras e números",
+                            "Erro",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+                else {
+                    break;
                 }
             }
-            else {
-                JOptionPane.showMessageDialog(this,
-                        "CPF ou e-mail não correspondem aos registros.",
-                        "Erro de Verificação",
-                        JOptionPane.ERROR_MESSAGE);
-            }
+            while (true);
+
+            repoUsuario.atualizarUsuario(cpf, novaSenha);
+            JOptionPane.showMessageDialog(this, "Senha redefinida com sucesso!");
         });
+
 
         setVisible(true);
     }
