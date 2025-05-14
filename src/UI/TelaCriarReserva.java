@@ -531,7 +531,10 @@ public class TelaCriarReserva extends JFrame {
                 clienteSelecionado.adicionarReserva(reservaFinal);
 
                 int pontosGanhos = (int) (valorFinal / 10);
-                clienteSelecionado.adicionarPontos(pontosGanhos - pontosUsados);
+                if (usarPontos) {
+                    pontosGanhos = pontosGanhos / 2;
+                }
+                clienteSelecionado.adicionarPontos(pontosGanhos);
 
                 gerarRecibo(reservaFinal, metodo, parcelas, valorFinal, pontosUsados);
 
@@ -561,6 +564,12 @@ public class TelaCriarReserva extends JFrame {
         JTextArea recibo = new JTextArea();
         recibo.setEditable(false);
         recibo.setFont(new Font("Consolas", Font.PLAIN, 14));
+
+        int pontosGanhos = (int) (valorFinal / 10);
+        if (pontosUsados > 0) {
+            pontosGanhos = pontosGanhos / 2;
+        }
+
         recibo.setText(
                 "=== Hotel Vieira Norte ===\n" +
                         "=== Recibo de Reserva ===\n\n" +
@@ -582,7 +591,7 @@ public class TelaCriarReserva extends JFrame {
                         "Método de Pagamento: " + metodo.getDescricao() +
                         (metodo == HotelEnums.MetodoPagamento.CREDITO ? " (" + parcelas + "x)" : "") + "\n" +
                         "Status: " + reserva.getStatus() + "\n\n" +
-                        "Pontos ganhos: " + (int) (valorFinal / 10) + "\n" +
+                        "Pontos ganhos: " + pontosGanhos + "\n" +
                         "Pontos totais: " + reserva.getCliente().getPontos() + "\n\n" +
                         "Obrigado pela sua reserva!"
         );

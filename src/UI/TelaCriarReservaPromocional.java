@@ -620,7 +620,9 @@ public class TelaCriarReservaPromocional extends JFrame {
         JTextArea recibo = new JTextArea();
         recibo.setEditable(false);
         recibo.setFont(new Font("Consolas", Font.PLAIN, 14));
+
         double valorOriginal = reserva.getValorTotal() / (1 - percentualDesconto);
+
         recibo.setText(
                 "=== Hotel Vieira Norte ===\n" +
                         "=== Recibo de Reserva Promocional ===\n\n" +
