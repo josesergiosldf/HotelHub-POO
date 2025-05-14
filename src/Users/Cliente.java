@@ -23,14 +23,6 @@ public class Cliente extends Usuario {
         return this.pontos;
     }
 
-    public boolean usarPontos(int pontos) {
-        if (this.pontos >= pontos) {
-            this.pontos -= pontos;
-            return true;
-        }
-        return false;
-    }
-
     public Reserva getReservaAtiva() {
         return reservas.stream()
                 .filter(r -> !r.isCheckOutRealizado())

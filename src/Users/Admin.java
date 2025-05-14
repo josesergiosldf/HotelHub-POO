@@ -29,16 +29,19 @@ public class Admin extends Usuario {
         return repoQuarto.listarQuartos();
     }
 
-    public double calcularLucroTotal(RepositoryReserva repoReserva, RepositoryUsuario repoUsuario) {
+    public double calcularFaturamentoTotal(RepositoryReserva repoReserva, RepositoryUsuario repoUsuario) {
         double lucroBruto = repoReserva.listarReservas().stream()
                 .mapToDouble(Reserva::getValorTotal)
                 .sum();
 
-        long numFuncionarios = repoUsuario.listarUsuarios().stream()
-                .filter(u -> u instanceof Admin)
-                .count();
-        double custoFuncionarios = numFuncionarios * 50;
+        if (lucroBruto > 0) {
+            long numFuncionarios = repoUsuario.listarUsuarios().stream()
+                    .filter(u -> u instanceof Admin)
+                    .count();
+            double custoFuncionarios = numFuncionarios * 50;
+            return lucroBruto - custoFuncionarios;
+        }
 
-        return lucroBruto - custoFuncionarios;
+        return 0;
     }
 }

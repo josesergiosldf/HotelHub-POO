@@ -47,7 +47,7 @@ public class TelaAdmin extends JFrame {
         JButton btnHistorico = new JButton("Histórico de Reservas");
         JButton btnQuartosDisponiveis = new JButton("Quartos Disponíveis");
         JButton btnTodosQuartos = new JButton("Todos os Quartos");
-        JButton btnLucro = new JButton("Lucro Total");
+        JButton btnLucro = new JButton("Faturamento Total");
         JButton btnCriarReserva = new JButton("Criar Nova Reserva");
         JButton btnRegistrarCliente = new JButton("Registrar Cliente");
         JButton btnVerClientes = new JButton("Ver Clientes Registrados");
@@ -127,10 +127,13 @@ public class TelaAdmin extends JFrame {
         });
 
         btnLucro.addActionListener((ActionEvent e) -> {
-            double lucro = admin.calcularLucroTotal(repoReserva, repoUsuario);
+            double faturamento = admin.calcularFaturamentoTotal(repoReserva, repoUsuario);
+            long numFuncionarios = repoUsuario.listarUsuarios().stream().filter(u -> u instanceof Admin).count();
+
             JOptionPane.showMessageDialog(this,
-                    "Lucro total: R$ " + String.format("%.2f", lucro) + "\n" +
-                            "(Considerando custo com " + repoUsuario.listarUsuarios().stream().filter(u -> u instanceof Admin).count() + " funcionários)");
+                    "Faturamento total: R$ " + String.format("%.2f", faturamento) + "\n" +
+                            "(Número de reservas: " + repoReserva.listarReservas().size() + ")\n" +
+                            "Custo com " + numFuncionarios + " funcionários: R$ " + (numFuncionarios * 50));
         });
 
         btnRegistrarCliente.addActionListener((ActionEvent e) -> {
