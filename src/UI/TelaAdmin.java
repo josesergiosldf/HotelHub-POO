@@ -273,6 +273,7 @@ public class TelaAdmin extends JFrame {
         String detalhes = "Detalhes da Reserva #" + reserva.getId() + "\n\n" +
                 "Cliente: " + reserva.getCliente().getNome() + "\n" +
                 "Quarto: " + reserva.getQuarto().getNumero() + " (" + reserva.getQuarto().getTipo() + ")\n" +
+                "Capacidade: " + reserva.getQuarto().getTipo().getCapacidade() + " pessoas\n" +
                 "Check-In: " + reserva.getDataCheckIn() + "\n" +
                 "Check-Out: " + reserva.getDataCheckOut() + "\n" +
                 "Status: " + reserva.getStatus() + "\n" +
@@ -286,14 +287,16 @@ public class TelaAdmin extends JFrame {
     private void exibirQuartos(List<Quarto> quartos, String titulo) {
         quartos.sort(Comparator.comparingInt(Quarto::getNumero));
 
-        String[] colunas = {"Número do Quarto", "Tipo", "Disponível"};
+        String[] colunas = {"Número", "Tipo", "Diária", "Capacidade", "Disponível"};
         Object[][] dados = new Object[quartos.size()][colunas.length];
 
         for (int i = 0; i < quartos.size(); i++) {
             Quarto q = quartos.get(i);
             dados[i][0] = q.getNumero();
             dados[i][1] = q.getTipo();
-            dados[i][2] = q.isDisponivel() ? "Sim" : "Não";
+            dados[i][2] = "R$ " + String.format("%.2f", q.getPrecoDiaria());
+            dados[i][3] = q.getTipo().getCapacidade() + " pessoas";
+            dados[i][4] = q.isDisponivel() ? "Sim" : "Não";
         }
 
         exibirTabela(titulo, dados, colunas);

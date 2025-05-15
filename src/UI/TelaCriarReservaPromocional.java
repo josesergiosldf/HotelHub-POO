@@ -124,10 +124,9 @@ public class TelaCriarReservaPromocional extends JFrame {
         corpoPanel.setBackground(COR_SECUNDARIA);
 
         List<Quarto> quartosDisponiveis = repoQuarto.listarQuartosDisponiveis();
-
         quartosDisponiveis.sort(Comparator.comparingInt(Quarto::getNumero));
 
-        String[] colunas = {"Número", "Tipo", "Diária", "Descrição"};
+        String[] colunas = {"Número", "Tipo", "Diária", "Capacidade"};
         Object[][] dados = new Object[quartosDisponiveis.size()][colunas.length];
 
         for (int i = 0; i < quartosDisponiveis.size(); i++) {
@@ -135,6 +134,7 @@ public class TelaCriarReservaPromocional extends JFrame {
             dados[i][0] = q.getNumero();
             dados[i][1] = q.getTipo();
             dados[i][2] = "R$ " + String.format("%.2f", q.getPrecoDiaria());
+            dados[i][3] = q.getTipo().getCapacidade() + " pessoas";
         }
 
         JTable tabela = new JTable(dados, colunas);
@@ -438,6 +438,7 @@ public class TelaCriarReservaPromocional extends JFrame {
                 "Cliente: " + clienteSelecionado.getNome() + "\n" +
                         "CPF: " + clienteSelecionado.getCpf() + "\n" +
                         "Quarto: " + quartoSelecionado.getNumero() + " (" + quartoSelecionado.getTipo() + ")\n" +
+                        "Capacidade: " + quartoSelecionado.getTipo().getCapacidade() + " pessoas\n" +
                         "Check-In: " + dataCheckIn + "\n" +
                         "Check-Out: " + dataCheckOut + "\n" +
                         "Dias: " + dataCheckIn.until(dataCheckOut).getDays() + "\n" +
@@ -629,6 +630,7 @@ public class TelaCriarReservaPromocional extends JFrame {
                         "ID: " + reserva.getId() + "\n" +
                         "Cliente: " + reserva.getCliente().getNome() + "\n" +
                         "Quarto: " + reserva.getQuarto().getNumero() + " (" + reserva.getQuarto().getTipo() + ")\n" +
+                        "Capacidade: " + quartoSelecionado.getTipo().getCapacidade() + " pessoas\n" +
                         "Período: " + reserva.getDataCheckIn() + " a " + reserva.getDataCheckOut() + "\n" +
                         "Dias: " + reserva.getDataCheckIn().until(reserva.getDataCheckOut()).getDays() + "\n\n" +
                         "Serviços:\n" +
@@ -641,9 +643,8 @@ public class TelaCriarReservaPromocional extends JFrame {
                         (metodo == HotelEnums.MetodoPagamento.CREDITO ?
                                 "Juros (" + (metodo.getJuros() * 100) + "%): R$ " +
                                         String.format("%.2f", reserva.getValorTotal() * metodo.getJuros()) + "\n" : "") +
-
-                        "Total Final: R$ " + String.format("%.2f", valorFinal) + "\n\n" +
-                        "Pagamento: " + metodo.getDescricao() +
+                        "Valor Final: R$ " + String.format("%.2f", valorFinal) + "\n\n" +
+                        "Método de Pagamento: " + metodo.getDescricao() +
                         (metodo == HotelEnums.MetodoPagamento.CREDITO ? " (" + parcelas + "x)" : "") + "\n" +
                         "Status: " + reserva.getStatus() + "\n\n" +
                         "⚠️ Reserva promocional não acumula pontos ⚠️\n" +

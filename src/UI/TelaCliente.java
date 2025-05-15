@@ -109,7 +109,7 @@ public class TelaCliente extends JFrame {
         tabela.setFont(new Font("Arial", Font.PLAIN, 14));
         tabela.setRowHeight(25);
         tabela.getTableHeader().setFont(new Font("Arial", Font.BOLD, 15));
-        tabela.getTableHeader().setBackground(Color.CYAN);
+        tabela.getTableHeader().setBackground(new Color(100, 149, 237));
         tabela.setGridColor(Color.GRAY);
         tabela.setSelectionBackground(Color.LIGHT_GRAY);
 
