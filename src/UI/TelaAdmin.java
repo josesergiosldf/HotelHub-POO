@@ -299,7 +299,52 @@ public class TelaAdmin extends JFrame {
             dados[i][4] = q.isDisponivel() ? "Sim" : "Não";
         }
 
-        exibirTabela(titulo, dados, colunas);
+        JTable tabela = new JTable(dados, colunas);
+        tabela.setFont(new Font("Arial", Font.PLAIN, 14));
+        tabela.setRowHeight(25);
+        tabela.getTableHeader().setFont(new Font("Arial", Font.BOLD, 15));
+        tabela.getTableHeader().setBackground(new Color(100, 149, 237));
+        tabela.setGridColor(Color.GRAY);
+        tabela.setSelectionBackground(Color.LIGHT_GRAY);
+
+        tabela.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && tabela.getSelectedRow() != -1) {
+                int selectedRow = tabela.getSelectedRow();
+                Quarto quartoSelecionado = quartos.get(selectedRow);
+                mostrarDetalhesQuarto(quartoSelecionado);
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(tabela);
+        JOptionPane.showMessageDialog(this, scrollPane, titulo, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void mostrarDetalhesQuarto(Quarto quarto) {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        ImageIcon icon = new ImageIcon(getClass().getResource(quarto.getTipo().getImagePath()));
+        Image image = icon.getImage().getScaledInstance(300, 200, Image.SCALE_SMOOTH);
+        JLabel lblImagem = new JLabel(new ImageIcon(image));
+        panel.add(lblImagem, BorderLayout.NORTH);
+
+        String numeroQuarto = String.valueOf(quarto.getNumero());
+        String andar = numeroQuarto.substring(0, 1);
+
+        String detalhes = "Andar: " + andar + "\n" +
+                "Número: " + quarto.getNumero() + "\n" +
+                "Tipo: " + quarto.getTipo() + "\n" +
+                "Diária: R$ " + String.format("%.2f", quarto.getPrecoDiaria()) + "\n" +
+                "Capacidade: " + quarto.getTipo().getCapacidade() + " pessoas";
+
+        JTextArea txtDetalhes = new JTextArea(detalhes);
+        txtDetalhes.setEditable(false);
+        txtDetalhes.setOpaque(false);
+        txtDetalhes.setFont(new Font("Arial", Font.PLAIN, 14));
+        txtDetalhes.setBorder(null);
+
+        panel.add(txtDetalhes, BorderLayout.CENTER);
+
+        JOptionPane.showMessageDialog(this, panel, "Detalhes do Quarto", JOptionPane.PLAIN_MESSAGE);
     }
 
     private void exibirUsuarios(List<Usuario> usuarios, String titulo) {
@@ -313,7 +358,100 @@ public class TelaAdmin extends JFrame {
             dados[i][2] = u.getEmail();
         }
 
-        exibirTabela(titulo, dados, colunas);
+        JTable tabela = new JTable(dados, colunas) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        tabela.setFont(new Font("Arial", Font.PLAIN, 14));
+        tabela.setRowHeight(25);
+        tabela.getTableHeader().setFont(new Font("Arial", Font.BOLD, 15));
+        tabela.getTableHeader().setBackground(new Color(100, 149, 237));
+        tabela.setGridColor(Color.GRAY);
+        tabela.setSelectionBackground(Color.LIGHT_GRAY);
+
+        tabela.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && tabela.getSelectedRow() != -1) {
+                int selectedRow = tabela.getSelectedRow();
+                Usuario usuarioSelecionado = usuarios.get(selectedRow);
+                mostrarOpcoesCliente((Cliente) usuarioSelecionado);
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(tabela);
+        JOptionPane.showMessageDialog(this, scrollPane, titulo, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void mostrarOpcoesCliente(Cliente cliente) {
+        String[] opcoes = {"Remover Cliente", "Ver Detalhes"};
+
+        String escolha = (String) JOptionPane.showInputDialog(
+                this,
+                "Selecione uma ação para o cliente " + cliente.getNome() + ":",
+                "Ações do Cliente",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opcoes,
+                opcoes[0]
+        );
+
+        if (escolha != null) {
+            switch (escolha) {
+                case "Remover Cliente":
+                    removerCliente(cliente);
+                    break;
+
+                case "Ver Detalhes":
+                    mostrarDetalhesCliente(cliente);
+                    break;
+            }
+        }
+    }
+
+    private void removerCliente(Cliente cliente) {
+        List<Reserva> reservasCliente = repoReserva.listarReservas().stream()
+                .filter(r -> r.getCliente().getCpf().equals(cliente.getCpf()))
+                .filter(r -> r.getStatus() == Reserva.Status.ATIVA || r.getStatus() == Reserva.Status.PASSIVA)
+                .toList();
+
+        if (!reservasCliente.isEmpty()) {
+            int confirmacao = JOptionPane.showConfirmDialog(
+                    this,
+                    "Este cliente possui " + reservasCliente.size() + " reserva(s) ativa(s).\n" +
+                            "Deseja cancelar todas as reservas e remover o cliente?",
+                    "Confirmação de Remoção",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirmacao != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            reservasCliente.forEach(reserva -> {
+                reserva.setStatus(Reserva.Status.CANCELADA);
+                repoReserva.atualizarReserva(reserva);
+            });
+        }
+
+        boolean removido = repoUsuario.removerUsuario(cliente.getCpf());
+
+        if (removido) {
+            JOptionPane.showMessageDialog(this, "Cliente removido com sucesso!");
+        }
+        else {
+            JOptionPane.showMessageDialog(this, "Erro ao remover cliente!", "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void mostrarDetalhesCliente(Cliente cliente) {
+        String detalhes = "Detalhes do Cliente:\n\n" +
+                "Nome: " + cliente.getNome() + "\n" +
+                "CPF: " + cliente.getCpf() + "\n" +
+                "Email: " + cliente.getEmail() + "\n";
+
+        JOptionPane.showMessageDialog(this, detalhes, "Detalhes do Cliente", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void exibirTabela(String titulo, Object[][] dados, String[] colunas) {
